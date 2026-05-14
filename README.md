@@ -1,7 +1,6 @@
 # ✈️ Airport Management — .NET 8 Academic Project
 
-> Projet académique réalisé dans le cadre du cours **.NET / C#** à **ESPRIT School of Engineering**.  
-> Encadrant : **Tarek Ayari**
+> Projet académique réalisé dans le cadre du cours **.NET / C#** à **ESPRIT School of Engineering**.
 
 ---
 
@@ -237,6 +236,5 @@ AM.UI.Console/
 |---|---|
 | **École** | ESPRIT School of Engineering |
 | **Cours** | Développement .NET / C# |
-| **Encadrant** | Tarek Ayari |
 | **Niveau** | Semestre 7 |
 | **Framework** | .NET 8 |

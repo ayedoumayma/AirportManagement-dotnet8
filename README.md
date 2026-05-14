@@ -234,7 +234,6 @@ AM.UI.Console/
 
 | | |
 |---|---|
-| **École** | ESPRIT School of Engineering |
 | **Cours** | Développement .NET / C# |
 | **Niveau** | Semestre 7 |
 | **Framework** | .NET 8 |

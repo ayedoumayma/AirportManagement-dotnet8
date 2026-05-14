@@ -242,12 +242,12 @@ Ce projet couvre de manière progressive et appliquée les compétences suivante
 ### 🔷 POO & C#
 | Compétence | Détail |
 |---|---|
-| Héritage | `Staff` et `Traveller` héritent de `Passenger` |
-| Polymorphisme de surcharge | `CheckProfile(string, string)` et `CheckProfile(string, string, string)` |
-| Polymorphisme d'héritage | `PassengerType()` virtuelle, surchargée dans chaque sous-classe |
-| Interfaces | `IServiceFlight` définit le contrat, `ServiceFlight` l'implémente |
-| Méthodes d'extension | `PassengerExtension.UpperFullName(this Passenger p)` |
-| Délégués & méthodes anonymes | `Action<Plane>` et `Func<string, double>` initialisés avec des lambdas |
+| Héritage | `Staff` et `Traveller` héritent de `Passenger` — propriétés communes centralisées dans la classe parent |
+| Polymorphisme de surcharge | Même méthode `CheckProfile` déclinée en 2 signatures : `(firstName, lastName)` et `(firstName, lastName, email)` — le compilateur choisit automatiquement la bonne version selon les arguments |
+| Polymorphisme d'héritage | `PassengerType()` déclarée `virtual` dans `Passenger`, surchargée (`override`) dans `Staff` et `Traveller` pour un comportement spécifique à chaque type |
+| Interfaces | `IServiceFlight` définit le contrat de service, `ServiceFlight` l'implémente — découplage entre définition et implémentation |
+| Méthodes d'extension | `PassengerExtension.UpperFullName(this Passenger p)` — ajoute un comportement à une classe existante sans la modifier |
+| Délégués & méthodes anonymes | `Action<Plane>` et `Func<string, double>` définis et initialisés avec des lambdas dans le constructeur de `ServiceFlight` |
 
 ### 🔷 LINQ
 | Compétence | Détail |

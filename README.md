@@ -235,7 +235,54 @@ AirportManagement/
 
 ---
 
-## 👨‍🎓 Contexte académique
+## 🎓 Compétences couvertes
+
+Ce projet couvre de manière progressive et appliquée les compétences suivantes :
+
+### 🔷 POO & C#
+| Compétence | Détail |
+|---|---|
+| Héritage | `Staff` et `Traveller` héritent de `Passenger` |
+| Polymorphisme de surcharge | `CheckProfile(string, string)` et `CheckProfile(string, string, string)` |
+| Polymorphisme d'héritage | `PassengerType()` virtuelle, surchargée dans chaque sous-classe |
+| Interfaces | `IServiceFlight` définit le contrat, `ServiceFlight` l'implémente |
+| Méthodes d'extension | `PassengerExtension.UpperFullName(this Passenger p)` |
+| Délégués & méthodes anonymes | `Action<Plane>` et `Func<string, double>` initialisés avec des lambdas |
+
+### 🔷 LINQ
+| Compétence | Détail |
+|---|---|
+| Query syntax | `from f in Flights where ... select ...` |
+| Lambda expressions | `.Where().Select().OrderBy()...` |
+| Opérateurs utilisés | `Where`, `Select`, `OrderBy`, `OrderByDescending`, `GroupBy`, `Average`, `Count`, `Take`, `OfType` |
+| Projections | Types anonymes `new { f.FlightDate, f.Destination }` |
+| Évolution | Chaque méthode implémentée d'abord en `for`, puis `foreach`, puis LINQ |
+
+### 🔷 Entity Framework Core 8
+| Compétence | Détail |
+|---|---|
+| Code First + Migrations | Modèle C# → base de données via `Add-Migration` / `Update-Database` |
+| `DbContext` & `DbSet` | `AMContext` avec 6 DbSets |
+| Lazy Loading Proxies | `UseLazyLoadingProxies()` + propriétés `virtual` |
+| Relation One-to-Many | `Plane` → `Flight` avec FK `planeId` et `ClientSetNull` |
+| Relation Many-to-Many | `Flight` ↔ `Passenger` via table `Reservation` |
+| Héritage TPH | Table unique `Passengers` avec discriminateur `IsTraveler` (0/1/2) |
+| Data Annotations | `[StringLength]`, `[Range]`, `[DataType]`, `[Display]`, `[ForeignKey]` |
+| Fluent API | `IEntityTypeConfiguration<T>` pour `Plane`, `Flight`, `Passenger`, `Ticket` |
+| Owned Entity | `FullName` (FirstName + LastName) mappé en colonnes `PassFirstName` / `PassLastName` |
+| Clé composite | `Ticket` avec PK `(PassengerFK, FlightFK, NumTicket)` |
+| Pré-conventions | `ConfigureConventions()` → toutes les colonnes `DateTime` en `datetime2` |
+
+### 🔷 Architecture
+| Compétence | Détail |
+|---|---|
+| Architecture 3-couches | `ApplicationCore` (domaine) / `Infrastructure` (données) / `UI.Console` (présentation) |
+| Séparation des responsabilités | Chaque couche a un rôle unique et des dépendances unidirectionnelles |
+| Pattern Repository-like | `ServiceFlight` encapsule toute la logique métier sur les vols |
+
+---
+
+## 👩‍💻 Contexte académique
 
 Projet réalisé dans le cadre d'un cours de développement **.NET / C#** (Semestre 7).  
-L'objectif était de maîtriser progressivement les fondamentaux du développement .NET : POO, LINQ, Entity Framework Core, et bonnes pratiques d'architecture en couches.
+Chaque partie du cours (théorie) a été appliquée directement dans ce projet, servant de support pratique consolidé pour l'ensemble de la promotion.

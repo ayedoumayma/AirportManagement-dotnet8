@@ -29,24 +29,93 @@ Ce projet simule la gestion d'un aéroport : avions, vols, passagers (voyageurs 
 
 La solution suit une architecture **3-couches** propre :
 
-```
-AirportManagement.sln
-├── AM.ApplicationCore      → Domaine métier : entités, interfaces, services
-├── AM.Infrastructure       → Couche données : EF Core DbContext, configurations, migrations
-└── AM.UI.Console           → Interface utilisateur console interactive
+```mermaid
+graph TD
+    subgraph UI["🖥️ AM.UI.Console — Couche Présentation"]
+        P[Program.cs\nPoint d'entrée + menu interactif]
+        MA[MenuActions.cs\nActions utilisateur CRUD]
+        CH[ConsoleHelpers.cs\nSaisie validée]
+        D[Demo.cs\nMode démo automatique]
+    end
+
+    subgraph INFRA["🗄️ AM.Infrastructure — Couche Données"]
+        CTX[AMContext.cs\nDbContext EF Core]
+        PC[PlaneConfiguration]
+        FC[FlightConfiguration]
+        PAC[PassengerConfiguration]
+        TC[TicketConfiguration]
+        MIG[Migrations/\nHistorique du schéma DB]
+    end
+
+    subgraph CORE["⚙️ AM.ApplicationCore — Couche Domaine"]
+        DOM[Domain/\nPlane · Flight · Passenger\nStaff · Traveller · Ticket]
+        INT[Interfaces/\nIServiceFlight]
+        SVC[Services/\nServiceFlight · PassengerExtension]
+    end
+
+    DB[(🗃️ SQL Server\nAirportMgmtDB)]
+
+    UI -->|utilise| INFRA
+    INFRA -->|référence| CORE
+    INFRA -->|EF Core| DB
+
+    style UI fill:#1e3a5f,color:#fff,stroke:#4a9eff
+    style INFRA fill:#1a4a2e,color:#fff,stroke:#4aff7a
+    style CORE fill:#4a1a1a,color:#fff,stroke:#ff6b6b
+    style DB fill:#2a2a2a,color:#fff,stroke:#888
 ```
 
+### Pourquoi cette architecture ?
+
+| Couche | Projet | Rôle | Dépendances |
+|---|---|---|---|
+| **Présentation** | `AM.UI.Console` | Interaction utilisateur, affichage, saisie | → Infrastructure |
+| **Infrastructure** | `AM.Infrastructure` | Accès base de données, EF Core, migrations | → ApplicationCore |
+| **Domaine** | `AM.ApplicationCore` | Entités métier, interfaces, logique service | aucune |
+
+**Règle fondamentale :** les dépendances vont **toujours vers le bas** — le domaine ne connaît ni la base de données ni l'interface utilisateur.
+
 ```
-AM.UI.Console
-      │
-      ▼
-AM.Infrastructure
-      │
-      ▼
-AM.ApplicationCore
+┌─────────────────────────────────────────────┐
+│           AM.UI.Console                     │  ← sait comment afficher
+│  Program · MenuActions · ConsoleHelpers     │
+└──────────────────┬──────────────────────────┘
+                   │ référence
+┌──────────────────▼──────────────────────────┐
+│           AM.Infrastructure                 │  ← sait comment persister
+│  AMContext · Configurations · Migrations    │
+└──────────────────┬──────────────────────────┘
+                   │ référence
+┌──────────────────▼──────────────────────────┐
+│           AM.ApplicationCore                │  ← sait ce qu'est le métier
+│  Domain · Interfaces · Services             │
+└─────────────────────────────────────────────┘
+                   │
+┌──────────────────▼──────────────────────────┐
+│        SQL Server LocalDB                   │
+│        AirportMgmtDB                        │
+└─────────────────────────────────────────────┘
 ```
 
----
+### Ce que chaque couche contient concrètement
+
+**`AM.ApplicationCore`** — ne dépend de rien d'externe
+- `Domain/` → les classes métier (`Plane`, `Flight`, `Passenger`, `Staff`, `Traveller`, `Ticket`, `FullName`)
+- `Interfaces/` → `IServiceFlight` : contrat que tout service de vols doit respecter
+- `Services/` → `ServiceFlight` (logique LINQ), `PassengerExtension` (méthode d'extension)
+
+**`AM.Infrastructure`** — dépend uniquement de `ApplicationCore`
+- `AMContext.cs` → le `DbContext` EF Core, point d'entrée vers la base de données
+- `Configurations/` → Fluent API : mapping table/colonne, relations, héritage TPH
+- `Migrations/` → historique versionné du schéma de la base de données
+
+**`AM.UI.Console`** — dépend de `Infrastructure` (et transitivement de `ApplicationCore`)
+- `Program.cs` → point d'entrée, menu principal, gestion des erreurs
+- `MenuActions.cs` → chaque option du menu (CRUD via `AMContext`)
+- `ConsoleHelpers.cs` → saisie utilisateur validée (int, string, DateTime, bool)
+- `Demo.cs` → scénario automatique de test sans interaction
+
+
 
 ## 🗂️ Modèle de données
 

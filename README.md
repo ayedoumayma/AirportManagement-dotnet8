@@ -1,168 +1,158 @@
-# ✈️ Airport Management — .NET 8 Academic Project
+# ✈️ Airport Management System — .NET 8
 
-> Projet académique réalisé dans le cadre du cours **.NET / C#** à **ESPRIT School of Engineering**.
-
----
-
-## 📋 Description
-
-Application de gestion des activités d'un aéroport développée en **C# / .NET 8**, couvrant l'ensemble du cycle de développement : modélisation objet, LINQ, Entity Framework Core, migrations, Data Annotations et Fluent API.
+> **Projet académique** réalisé dans le cadre du cours **.NET / C#** (Semestre 7).  
+> Application complète de gestion des activités d'un aéroport, couvrant la modélisation objet, LINQ, Entity Framework Core et une interface console interactive.
 
 ---
 
-## 🏗️ Architecture de la solution
+## � Aperçu
 
-La solution suit une architecture **3-couches** :
+Ce projet simule la gestion d'un aéroport : avions, vols, passagers (voyageurs et personnel), billets et réservations. Il a été développé progressivement en plusieurs parties, chacune introduisant un nouveau concept du développement .NET :
+
+| # | Concept couvert |
+|---|---|
+| 1 | Modélisation objet & diagramme de classes |
+| 2 | Instanciation, constructeurs, initialiseurs |
+| 3 | Polymorphisme de surcharge |
+| 4 | Polymorphisme d'héritage |
+| 5 | Interfaces, services, données de test |
+| 6 | LINQ (query syntax & lambda expressions) |
+| 7 | Méthodes d'extension |
+| 8–9 | Entity Framework Core — DbContext & migrations |
+| 10 | Data Annotations |
+| 11 | Fluent API & configuration avancée |
+| 12 | Table porteuse de données & CRUD complet |
+
+---
+
+## 🏗️ Architecture
+
+La solution suit une architecture **3-couches** propre :
 
 ```
 AirportManagement.sln
-├── AM.ApplicationCore      → Domaine métier (entités, interfaces, services)
-├── AM.Infrastructure       → Couche données (EF Core DbContext, configurations)
-└── AM.UI.Console           → Interface utilisateur console
+├── AM.ApplicationCore      → Domaine métier : entités, interfaces, services
+├── AM.Infrastructure       → Couche données : EF Core DbContext, configurations, migrations
+└── AM.UI.Console           → Interface utilisateur console interactive
 ```
 
-**Dépendances entre projets :**
 ```
-AM.UI.Console → AM.Infrastructure → AM.ApplicationCore
+AM.UI.Console
+      │
+      ▼
+AM.Infrastructure
+      │
+      ▼
+AM.ApplicationCore
 ```
-
----
-
-## 📦 Technologies & Packages
-
-| Package | Version | Projet(s) |
-|---|---|---|
-| Microsoft.EntityFrameworkCore | 8.0.13 | Tous |
-| Microsoft.EntityFrameworkCore.SqlServer | 8.0.13 | Infrastructure, UI |
-| Microsoft.EntityFrameworkCore.Tools | 8.0.13 | Infrastructure, UI |
-| Microsoft.EntityFrameworkCore.Design | 8.0.13 | Infrastructure, UI |
-| Microsoft.EntityFrameworkCore.Proxies | 8.0.13 | ApplicationCore, Infrastructure |
-
-**Base de données :** SQL Server LocalDB (`AirportMgmtDB`)
 
 ---
 
 ## 🗂️ Modèle de données
 
-### Diagramme de classes
-
 ```
 PlaneType (enum)
-  └── Boing | Airbus
+  Boing | Airbus
 
-Plane ──────────────────────── 1 ──── * ──── Flight
-  - PlaneId (PK)                              - FlightId (PK)
-  - PlaneType                                 - Airline
-  - Capacity                                  - Departure / Destination
-  - ManufactureDate                           - FlightDate / EffectiveArrival
-                                              - EstimatedDuration
-                                              - planeId (FK)
-                                                    │
-                                              * ────┤ (many-to-many via Reservation)
-                                                    │
-Passenger ◄──────────────────────────────────────── *
-  - Id (PK)
-  - PassportNumber
-  - FullName (owned: FirstName, LastName)
-  - BirthDate / TelNumber / EmailAddress
-       ▲
-       ├── Staff
-       │     - Function / EmployementDate / Salary
-       └── Traveller
-             - HealthInformation / Nationality
+┌─────────────┐   1      *   ┌──────────────────┐
+│    Plane    │──────────────│      Flight       │
+│─────────────│              │──────────────────│
+│ PlaneId     │              │ FlightId          │
+│ PlaneType   │              │ Airline           │
+│ Capacity    │              │ Departure         │
+│ Manufacture │              │ Destination       │
+│   Date      │              │ FlightDate        │
+└─────────────┘              │ EstimatedDuration │
+                             │ EffectiveArrival  │
+                             └────────┬──────────┘
+                                      │ * (many-to-many)
+                                      │  via table "Reservation"
+                                      │ *
+                             ┌────────┴──────────┐
+                             │     Passenger      │
+                             │───────────────────│
+                             │ Id                │
+                             │ PassportNumber    │
+                             │ FullName          │
+                             │ BirthDate         │
+                             │ EmailAddress      │
+                             │ TelNumber         │
+                             └────────┬──────────┘
+                                      │ (TPH inheritance)
+                          ┌───────────┴───────────┐
+                   ┌──────┴──────┐         ┌──────┴──────┐
+                   │    Staff    │         │  Traveller  │
+                   │─────────────│         │─────────────│
+                   │ Function    │         │HealthInfo   │
+                   │EmployDate   │         │ Nationality │
+                   │ Salary      │         └─────────────┘
+                   └─────────────┘
 
 Ticket (table porteuse de données)
-  - PK composée : (PassengerFK, FlightFK, NumTicket)
-  - Prix / Siege / VIP
+  PK composée : (PassengerFK, FlightFK, NumTicket)
+  Prix | Siege | VIP
 ```
 
-### Relations
-| Relation | Type | Table/Clé |
+### Relations EF Core
+
+| Relation | Type | Détail |
 |---|---|---|
-| Plane → Flight | One-to-Many | FK `planeId` (ClientSetNull) |
-| Flight ↔ Passenger | Many-to-Many | Table `Reservation` |
-| Passenger → Ticket | One-to-Many | FK `PassengerFK` |
-| Flight → Ticket | One-to-Many | FK `FlightFK` |
-| Passenger (TPH) | Héritage | Discriminateur `IsTraveler` (0/1/2) |
+| `Plane` → `Flight` | One-to-Many | FK `planeId`, `ClientSetNull` on delete |
+| `Flight` ↔ `Passenger` | Many-to-Many | Table de jointure `Reservation` |
+| `Passenger` → `Ticket` | One-to-Many | FK `PassengerFK` |
+| `Flight` → `Ticket` | One-to-Many | FK `FlightFK` |
+| `Passenger` / `Staff` / `Traveller` | Héritage TPH | Discriminateur `IsTraveler` : `0` / `1` / `2` |
 
 ---
 
-## 🧩 Parties implémentées
+## 🔍 Fonctionnalités LINQ (ServiceFlight)
 
-### Partie 1 — Diagramme de classes
-- Implémentation de toutes les entités du diagramme
-- Héritage `Passenger` → `Staff` / `Traveller`
-- Propriétés de navigation avec mot-clé `virtual`
-- Override de `ToString()` sur toutes les classes
-
-### Partie 2 — Instanciation des objets
-- Constructeur non paramétré, constructeur paramétré, initialiseurs d'objets
-
-### Partie 3 — Polymorphisme de surcharge
-- Méthodes `CheckProfile(string, string)` et `CheckProfile(string, string, string)` dans `Passenger`
-
-### Partie 4 — Polymorphisme d'héritage
-- Méthode virtuelle `PassengerType()` surchargée dans `Staff` et `Traveller`
-
-### Partie 5 — Interface & Service
-- Interface `IServiceFlight` dans `AM.ApplicationCore/Interfaces`
-- Classe `ServiceFlight` dans `AM.ApplicationCore/Services`
-- Données de test statiques dans `TestData`
-
-### Partie 5.1 & 5.2 — Itérations / Structures conditionnelles
-- `GetFlightDates(string destination)` — version `for`, `foreach`, puis LINQ
-- `GetFlights(string filterType, string filterValue)` — filtrage dynamique par attribut
-
-### Partie 6 — LINQ
 | Méthode | Description |
 |---|---|
-| `GetFlightDates(destination)` | Dates des vols vers une destination (LINQ query + lambda) |
-| `ShowFlightDetails(Plane)` | Dates et destinations des vols d'un avion |
-| `ProgrammedFlightNumber(DateTime)` | Nombre de vols sur 7 jours à partir d'une date |
+| `GetFlightDates(destination)` | Retourne les dates de vols vers une destination — implémenté en `for`, `foreach` puis LINQ |
+| `GetFlights(filterType, filterValue)` | Filtrage dynamique des vols par attribut |
+| `ShowFlightDetails(plane)` | Affiche les dates et destinations des vols d'un avion |
+| `ProgrammedFlightNumber(startDate)` | Nombre de vols programmés sur 7 jours |
 | `DurationAverage(destination)` | Moyenne des durées estimées par destination |
 | `OrderedDurationFlights()` | Vols triés par durée décroissante |
-| `SeniorTravellers(Flight)` | 3 voyageurs les plus âgés d'un vol |
-| `DestinationGroupedFlights()` | Vols groupés par destination |
+| `SeniorTravellers(flight)` | Les 3 voyageurs les plus âgés d'un vol |
+| `DestinationGroupedFlights()` | Vols groupés et affichés par destination |
 
-Délégués `Action<Plane>` et `Func<string, double>` avec méthodes anonymes.
+> Chaque méthode est disponible en **query syntax** et **lambda expression**.  
+> Des délégués `Action<Plane>` et `Func<string, double>` avec méthodes anonymes sont également utilisés.
 
-### Partie 7 — Méthodes d'extension
-- `PassengerExtension.UpperFullName(this Passenger p)` — met en majuscule la première lettre du nom/prénom
+---
 
-### Partie 9 & 10 — Entity Framework Core
-- Classe `AMContext` héritant de `DbContext`
-- Lazy Loading Proxies activé (`UseLazyLoadingProxies()`)
-- Convention globale : toutes les colonnes `DateTime` → type `datetime2`
-- Migrations EF Core
+## ⚙️ Configuration EF Core (Fluent API)
 
-### Partie 12 — Data Annotations
-| Propriété | Annotation |
+| Classe de configuration | Ce qu'elle configure |
 |---|---|
-| `PassportNumber` | `[StringLength(7)]` |
-| `BirthDate` | `[Display(Name="Date of birth")]`, `[DataType(DataType.Date)]` |
-| `EmailAddress` | `[DataType(DataType.EmailAddress)]` |
-| `Salary` | `[DataType(DataType.Currency)]` |
-| `Capacity` | `[Range(0, int.MaxValue)]` |
+| `PlaneConfiguration` | Table `MyPlanes`, colonne `Capacity` → `PlaneCapacity` |
+| `FlightConfiguration` | Relation many-to-many → table `Reservation`, FK `planeId` avec `ClientSetNull` |
+| `PassengerConfiguration` | Héritage TPH, `FullName` en owned entity (`PassFirstName` / `PassLastName`) |
+| `TicketConfiguration` | Clé primaire composée `(PassengerFK, FlightFK, NumTicket)` |
 
-### Partie 13 — Fluent API
-- **PlaneConfiguration** : table `MyPlanes`, colonne `PlaneCapacity`
-- **FlightConfiguration** : many-to-many → table `Reservation`, one-to-many avec `ClientSetNull`
-- **PassengerConfiguration** : héritage TPH avec discriminateur `IsTraveler`, `FullName` en owned entity
-- **TicketConfiguration** : clé primaire composée `(PassengerFK, FlightFK, NumTicket)`
-- Pré-conventions : `ConfigureConventions()` pour forcer `datetime2`
+Convention globale : toutes les propriétés `DateTime` → type SQL `datetime2`.
 
-### Partie 14 & 15 — Table porteuse de données & CRUD
-- Entité `Ticket` avec clé composite
-- Application console interactive (8 options) :
-  1. Ajouter un Avion
-  2. Ajouter un Vol
-  3. Ajouter un Voyageur
-  4. Affecter des Vols à un Avion
-  5. Affecter des Voyageurs à des Vols
-  6. Afficher le nombre de vols par avion
-  7. Afficher le nombre de passagers par vol
-  8. Quitter
-- Mode `--demo` pour exécution automatisée sans interaction
+---
+
+## 🖥️ Application Console
+
+L'application propose un menu interactif à 8 options :
+
+```
+=== Airport Management (Console) ===
+1. Ajouter un Avion
+2. Ajouter un Vol
+3. Ajouter un Voyageur
+4. Affecter des Vols à un Avion
+5. Affecter des Voyageurs à des Vols
+6. Afficher le nombre de vols par avion
+7. Afficher le nombre de passagers par vol
+8. Quitter
+```
+
+Un mode **démo automatique** est disponible via `--demo` pour tester les insertions sans interaction.
 
 ---
 
@@ -170,70 +160,82 @@ Délégués `Action<Plane>` et `Func<string, double>` avec méthodes anonymes.
 
 ### Prérequis
 - [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8)
-- SQL Server LocalDB (inclus avec Visual Studio)
+- SQL Server LocalDB (inclus avec Visual Studio 2022)
 
-### Démarrage
+### Étapes
 
 ```bash
-# Cloner le dépôt
-git clone <url-du-repo>
-cd AirportManagement_correctionS7/AirportManagement_correctionS7
+# 1. Cloner le dépôt
+git clone https://github.com/ayedoumayma/AirportManagement-dotnet8.git
+cd AirportManagement-dotnet8
 
-# Restaurer les packages
+# 2. Restaurer les packages NuGet
 dotnet restore
 
-# Appliquer les migrations (crée la base AirportMgmtDB)
+# 3. Créer la base de données (migrations EF Core)
 dotnet ef database update --project AM.Infrastructure --startup-project AM.UI.Console
 
-# Lancer l'application interactive
+# 4. Lancer l'application interactive
 dotnet run --project AM.UI.Console
 
-# Ou lancer le mode démo automatique
+# 5. Ou lancer le mode démo (insertions automatiques)
 dotnet run --project AM.UI.Console -- --demo
 ```
 
 ---
 
-## 📁 Structure des fichiers
+## � Stack technique
+
+| Technologie | Version |
+|---|---|
+| .NET / C# | 8.0 |
+| Entity Framework Core | 8.0.13 |
+| EF Core SqlServer | 8.0.13 |
+| EF Core Proxies (Lazy Loading) | 8.0.13 |
+| SQL Server LocalDB | — |
+
+---
+
+## 📁 Structure du projet
 
 ```
-AM.ApplicationCore/
-├── Domain/
-│   ├── Plane.cs
-│   ├── Flight.cs
-│   ├── Passenger.cs
-│   ├── Staff.cs
-│   ├── Traveller.cs
-│   ├── FullName.cs
-│   ├── Ticket.cs
-│   └── TestData.cs
-├── Interfaces/
-│   └── IServiceFlight.cs
-└── Services/
-    ├── ServiceFlight.cs
-    └── PassengerExtension.cs
-
-AM.Infrastructure/
-├── AMContext.cs
-└── Configurations/
-    ├── PlaneConfiguration.cs
-    ├── FlightConfiguration.cs
-    ├── PassangerConfiguration.cs
-    └── TicketConfiguration.cs
-
-AM.UI.Console/
-├── Program.cs
-├── MenuActions.cs
-├── ConsoleHelpers.cs
-└── Demo.cs
+AirportManagement/
+│
+├── AM.ApplicationCore/
+│   ├── Domain/
+│   │   ├── Plane.cs
+│   │   ├── Flight.cs
+│   │   ├── Passenger.cs
+│   │   ├── Staff.cs
+│   │   ├── Traveller.cs
+│   │   ├── FullName.cs
+│   │   ├── Ticket.cs
+│   │   └── TestData.cs
+│   ├── Interfaces/
+│   │   └── IServiceFlight.cs
+│   └── Services/
+│       ├── ServiceFlight.cs
+│       └── PassengerExtension.cs
+│
+├── AM.Infrastructure/
+│   ├── AMContext.cs
+│   ├── Configurations/
+│   │   ├── PlaneConfiguration.cs
+│   │   ├── FlightConfiguration.cs
+│   │   ├── PassangerConfiguration.cs
+│   │   └── TicketConfiguration.cs
+│   └── Migrations/
+│
+└── AM.UI.Console/
+    ├── Program.cs
+    ├── MenuActions.cs
+    ├── ConsoleHelpers.cs
+    └── Demo.cs
 ```
 
 ---
 
 ## 👨‍🎓 Contexte académique
 
-| | |
-|---|---|
-| **Cours** | Développement .NET / C# |
-| **Niveau** | Semestre 7 |
-| **Framework** | .NET 8 |
+Projet réalisé dans le cadre d'un cours de développement **.NET / C#** (Semestre 7).  
+L'objectif était de maîtriser progressivement les fondamentaux du développement .NET : POO, LINQ, Entity Framework Core, et bonnes pratiques d'architecture en couches.
